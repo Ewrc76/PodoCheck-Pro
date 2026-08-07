@@ -1,372 +1,181 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PodoCheck Pro - Análisis Podológico IA</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0d9488">
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- jsPDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    body { font-family: system-ui, -apple-system, sans-serif; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PodoCheck Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-12">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center p-4">
 
-  <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50 shadow-lg">
-    <div class="max-w-3xl mx-auto flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 bg-white rounded-xl p-1 flex items-center justify-center border border-teal-500 shadow-md">
-          <img id="imgLogoApp" src="Podo.png" alt="Logo Podología" class="w-full h-full object-contain">
+    <div class="w-full max-w-md bg-slate-800 rounded-2xl shadow-xl p-6 flex flex-col gap-4">
+        <header class="text-center">
+            <h1 class="text-2xl font-bold text-emerald-400">PodoCheck Pro</h1>
+            <p class="text-xs text-slate-400">Asistencia Clínica e Inteligencia Artificial Podológica</p>
+        </header>
+
+        <!-- Sección de captura / subida de foto -->
+        <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-slate-300">Captura de la Zona Afectada (Piel o Uñas)</label>
+            <input type="file" id="inputFoto" accept="image/*" capture="environment" class="hidden" onchange="manejarArchivo(this)">
+            
+            <button onclick="document.getElementById('inputFoto').click()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2">
+                📷 Tomar / Subir Foto
+            </button>
         </div>
-        <div>
-          <h1 class="font-bold text-lg text-teal-400 leading-tight">PodoCheck Pro</h1>
-          <p class="text-xs text-slate-400">Asistencia Clínica e Inteligencia Artificial Podológica</p>
+
+        <!-- Vista previa de la imagen -->
+        <div id="contenedorVistaPrevia" class="hidden flex flex-col items-center gap-2">
+            <img id="imgVistaPrevia" class="w-full h-48 object-cover rounded-xl border border-slate-700" alt="Vista previa">
+            <div id="estadoImagen" class="text-xs text-emerald-400 font-medium">✓ Imagen lista y optimizada. Presiona 'Analizar con IA'.</div>
         </div>
-      </div>
-      <span class="text-[10px] bg-teal-950 text-teal-300 border border-teal-800 px-2.5 py-1 rounded-full font-semibold">
-        Versión Clínica IA v2.1
-      </span>
-    </div>
-  </header>
 
-  <main class="max-w-3xl mx-auto p-4 space-y-6">
-
-    <section class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-md text-center space-y-4">
-      <h2 class="text-lg font-bold text-teal-400 flex items-center justify-center gap-2">
-        📷 Captura de la Zona Afectada (Piel o Uñas)
-      </h2>
-      <p class="text-xs text-slate-400 max-w-md mx-auto">
-        Toma una foto clara de las <b>uñas</b>, <b>planta del pie</b>, <b>talón</b> o <b>espacios entre los dedos</b>.
-      </p>
-
-      <div class="relative max-w-md mx-auto aspect-square bg-slate-900 rounded-2xl border-2 border-dashed border-slate-700 flex flex-col items-center justify-center p-4 overflow-hidden group">
-        <img id="vistaPrevia" class="hidden w-full h-full object-cover rounded-xl" alt="Zona a analizar">
-        
-        <div id="placeholderCamara" class="space-y-3 p-4">
-          <div class="w-16 h-16 bg-slate-800 text-teal-400 rounded-full flex items-center justify-center mx-auto text-3xl shadow-inner">
-            🔍
-          </div>
-          <p class="text-xs text-slate-400">Carga o toma una fotografía clara del área a evaluar</p>
-        </div>
-      </div>
-
-      <div id="cajaCalidad" class="hidden max-w-md mx-auto p-3 rounded-xl text-xs font-semibold"></div>
-
-      <div class="flex justify-center gap-3 max-w-md mx-auto pt-2">
-        <label class="flex-1 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-xl cursor-pointer text-sm shadow flex items-center justify-center gap-2">
-          📸 Tomar / Subir Foto
-          <input type="file" id="inputFoto" accept="image/*" capture="environment" onchange="procesarFoto(event)" class="hidden">
-        </label>
-        <button id="btnAnalizar" onclick="analizarFotoIA()" disabled class="flex-1 bg-slate-700 text-slate-500 cursor-not-allowed font-bold py-3 px-4 rounded-xl text-sm shadow transition">
-          🧬 Analizar con IA
+        <!-- Botón de análisis -->
+        <button id="btnAnalizar" onclick="analizarConIA()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2">
+            🔬 Analizar con IA
         </button>
-      </div>
-    </section>
 
-    <div id="cargandoIA" class="hidden bg-slate-800 p-6 rounded-2xl border border-slate-700 text-center space-y-3">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-teal-500 border-t-transparent"></div>
-      <p class="text-sm font-semibold text-teal-300">Conectando con el Motor de Visión IA de Google...</p>
-      <p class="text-xs text-slate-400">Analizando minuciosamente patrones visuales de piel o afección ungueal.</p>
+        <!-- Indicador de carga -->
+        <div id="cargandoIA" class="hidden text-center py-4">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
+            <p class="text-xs text-slate-400 mt-2">Analizando imagen clínica...</p>
+        </div>
+
+        <!-- Resultados -->
+        <div id="resultados" class="hidden flex flex-col gap-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-slate-400">Probabilidad:</span>
+                <span id="badgeProbabilidad" class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-lg font-bold"></span>
+            </div>
+            <div>
+                <span class="text-xs text-slate-400">Afección:</span>
+                <h3 id="resTituloAfeccion" class="font-bold text-lg text-slate-100"></h3>
+            </div>
+            <div>
+                <span class="text-xs text-slate-400">Agente / Origen probable:</span>
+                <p id="resTipoPatogeno" class="text-sm text-slate-300"></p>
+            </div>
+            <div>
+                <span class="text-xs text-slate-400">Hallazgos visuales:</span>
+                <ul id="resListaHallazgos" class="list-disc list-inside text-xs text-slate-300 space-y-1"></ul>
+            </div>
+            <div>
+                <span class="text-xs text-slate-400">Recomendaciones:</span>
+                <p id="resRecomendaciones" class="text-xs text-slate-300 bg-slate-800 p-3 rounded-lg border border-slate-700"></p>
+            </div>
+        </div>
     </div>
 
-    <section id="seccionResultado" class="hidden bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-md space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-        <h2 class="text-lg font-bold text-teal-400 flex items-center gap-2">
-          📋 Informe de Análisis Podológico IA
-        </h2>
-        <span id="badgeProbabilidad" class="text-xs font-bold px-3 py-1 rounded-full bg-teal-950 text-teal-300 border border-teal-700">
-          Certeza Calculada
-        </span>
-      </div>
+    <script>
+        const GEMINI_KEY = "AIzaSyA_m7-n5W7rYh8L8-zU6rP6F9W4m2X0J1Q";
+        let imagenBase64Limpia = "";
 
-      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-2">
-        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Afección Sospechada Principal</p>
-        <p id="resTituloAfeccion" class="text-xl font-extrabold text-teal-300">--</p>
-        <p id="resTipoPatogeno" class="text-xs text-slate-300">Agente/Origen probable: --</p>
-      </div>
-
-      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-2">
-        <p class="text-xs text-teal-400 font-bold uppercase tracking-wider">Hallazgos Clínicos Visuales</p>
-        <ul id="resListaHallazgos" class="text-xs text-slate-300 space-y-1 list-disc list-inside"></ul>
-      </div>
-
-      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-2">
-        <p class="text-xs text-amber-400 font-bold uppercase tracking-wider">Recomendaciones y Cuidado Podológico</p>
-        <p id="resRecomendaciones" class="text-xs text-slate-300 leading-relaxed">--</p>
-      </div>
-
-      <div class="p-3 bg-amber-950/60 border border-amber-800/80 rounded-xl text-[11px] text-amber-200">
-        ⚠️ <b>Aviso Médico Orientativo:</b> Este análisis es un informe orientativo generado mediante visión artificial. No sustituye la valoración directa ni un cultivo de laboratorio realizado por un profesional titulado en Podología o Dermatología.
-      </div>
-
-      <button onclick="generarReportePDF()" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 rounded-xl text-sm shadow flex items-center justify-center gap-2">
-        📄 Descargar Informe Médico PDF (con Logo)
-      </button>
-    </section>
-
-  </main>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').then(reg => {
-        reg.update();
-      }).catch(() => console.log('SW no registrado'));
-
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
-      });
-    }
-
-    let imagenBase64Limpia = "";
-    let resultadoActual = null;
-
-    function procesarFoto(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const img = new Image();
-        img.onload = function() {
-          document.getElementById('vistaPrevia').src = evt.target.result;
-          document.getElementById('vistaPrevia').classList.remove('hidden');
-          document.getElementById('placeholderCamara').classList.add('hidden');
-
-          imagenBase64Limpia = comprimirImagen(img, 800, 0.7);
-          validarCalidadFoto(img);
-        };
-        img.src = evt.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function comprimirImagen(img, maxDim, calidad) {
-      const canvas = document.createElement('canvas');
-      let w = img.width;
-      let h = img.height;
-
-      if (w > h) {
-        if (w > maxDim) {
-          h = Math.round((h * maxDim) / w);
-          w = maxDim;
+        function manejarArchivo(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        // Redimensionar para evitar errores de memoria o reinicios en móviles
+                        const MAX_WIDTH = 800;
+                        const MAX_HEIGHT = 800;
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Obtener Base64 comprimido y limpio
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        imagenBase64Limpia = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+                        
+                        // Mostrar vista previa sin recargar la página
+                        document.getElementById('imgVistaPrevia').src = dataUrl;
+                        document.getElementById('contenedorVistaPrevia').classList.remove('hidden');
+                        document.getElementById('btnAnalizar').classList.remove('hidden');
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
         }
-      } else {
-        if (h > maxDim) {
-          w = Math.round((w * maxDim) / h);
-          h = maxDim;
+
+        async function analizarConIA() {
+            if (!imagenBase64Limpia) {
+                alert("Por favor, selecciona o toma una foto primero.");
+                return;
+            }
+
+            document.getElementById('cargandoIA').classList.remove('hidden');
+            document.getElementById('resultados').classList.add('hidden');
+
+            const promptClinico = "Analiza esta imagen desde una perspectiva estrictamente podológica. Devuelve un JSON válido con esta estructura exacta: {\"afeccion\": \"Nombre clínico exacto\", \"patogeno\": \"Causa u origen\", \"probabilidad\": \"Porcentaje entre 85% y 98%\", \"hallazgos\": [\"Característica 1\", \"Característica 2\"], \"recomendaciones\": \"Recomendaciones de higiene y podología\"}";
+
+            try {
+                const respuesta = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: promptClinico },
+                                { inline_data: { mime_type: "image/jpeg", data: imagenBase64Limpia } }
+                            ]
+                        }],
+                        generationConfig: { response_mime_type: "application/json" }
+                    })
+                });
+
+                if (!respuesta.ok) {
+                    throw new Error("Error en la conexión con la IA");
+                }
+
+                const data = await respuesta.json();
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    const textoRespuesta = data.candidates[0].content.parts[0].text;
+                    const resultadoActual = JSON.parse(textoRespuesta);
+
+                    document.getElementById('badgeProbabilidad').textContent = resultadoActual.probabilidad + " Certeza";
+                    document.getElementById('resTituloAfeccion').textContent = resultadoActual.afeccion;
+                    document.getElementById('resTipoPatogeno').textContent = "Agente / Origen probable: " + resultadoActual.patogeno;
+
+                    const lista = document.getElementById('resListaHallazgos');
+                    lista.innerHTML = '';
+                    resultadoActual.hallazgos.forEach(h => {
+                        const li = document.createElement('li');
+                        li.textContent = h;
+                        lista.appendChild(li);
+                    });
+
+                    document.getElementById('resRecomendaciones').textContent = resultadoActual.recomendaciones;
+                    document.getElementById('resultados').classList.remove('hidden');
+                } else {
+                    throw new Error("Respuesta no válida del modelo");
+                }
+            } catch (error) {
+                alert("Error al procesar: " + error.message);
+                console.error(error);
+            } finally {
+                document.getElementById('cargandoIA').classList.add('hidden');
+            }
         }
-      }
-
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-
-      const dataUrl = canvas.toDataURL('image/jpeg', calidad);
-      return dataUrl.split(',')[1];
-    }
-
-    function validarCalidadFoto(img) {
-      const cajaCalidad = document.getElementById('cajaCalidad');
-      const btnAnalizar = document.getElementById('btnAnalizar');
-      cajaCalidad.classList.remove('hidden', 'bg-rose-950', 'text-rose-300', 'border-rose-800', 'bg-emerald-950', 'text-emerald-300', 'border-emerald-800');
-      cajaCalidad.classList.add('border');
-
-      if (img.width < 200 || img.height < 200) {
-        cajaCalidad.classList.add('bg-rose-950', 'text-rose-300', 'border-rose-800');
-        cajaCalidad.innerHTML = "❌ <b>Foto de baja resolución.</b> Toma una foto con mejor enfoque y buena iluminación.";
-        btnAnalizar.disabled = true;
-        btnAnalizar.className = "flex-1 bg-slate-700 text-slate-500 cursor-not-allowed font-bold py-3 px-4 rounded-xl text-sm shadow";
-        return;
-      }
-
-      cajaCalidad.classList.add('bg-emerald-950', 'text-emerald-300', 'border-emerald-800');
-      cajaCalidad.innerHTML = "✅ <b>Imagen lista y optimizada.</b> Presiona 'Analizar con IA' para obtener la evaluación.";
-      
-      btnAnalizar.disabled = false;
-      btnAnalizar.className = "flex-1 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-xl text-sm shadow cursor-pointer transition";
-    }
-
-    async function analizarFotoIA() {
-      if (!imagenBase64Limpia) return;
-
-      document.getElementById('cargandoIA').classList.remove('hidden');
-      document.getElementById('seccionResultado').classList.add('hidden');
-
-      const promptClinico = `Actúa como un médico especialista en Podología y Dermatología clínica. Analiza la imagen adjunta.
-
-IMPORTANTE: Determina si es un problema en PIEL o UÑAS (ejemplo: Onicomicosis, Pie de atleta, Tinea Pedis, Verruga plantar, Psoriasis ungueal, Piel Sana, Uña Sana, etc.).
-
-Devuelve ÚNICAMENTE un objeto JSON estricto:
-{
-  "afeccion": "Nombre clínico exacto de la condición",
-  "patogeno": "Causa u origen (Ej: Trichophyton rubrum, Fricción, Cándida, etc.)",
-  "probabilidad": "Porcentaje de certeza entre 85% y 98%",
-  "hallazgos": [
-    "Primera característica visual observada",
-    "Segunda característica visual observada",
-    "Tercera característica visual observada"
-  ],
-  "recomendaciones": "Recomendaciones podológicas específicas e higiene."
-}`;
-
-    const GEMINI_KEY = "AIzaSyA_m7-n5W7rYh8L8-zU6rP6F9W4m2X0J1Q";
-   const respuesta = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            contents: [{
-                parts: [
-                    { text: promptClinico },
-                    { inline_data: { mime_type: "image/jpeg", data: imagenBase64Limpia } }
-                ]
-            }],
-            generationConfig: { response_mime_type: "application/json" }
-        })
-    });
-
-    if (!respuesta.ok) {
-        throw new Error("Error en la conexión con la IA");
-    }
-
-    const data = await respuesta.json();
-    if (data.candidates && data.candidates[0].content.parts[0].text) {
-        const textoRespuesta = data.candidates[0].content.parts[0].text;
-        resultadoActual = JSON.parse(textoRespuesta);
-    } else {
-        throw new Error("Respuesta no válida del modelo");
-    }
-} catch (error) {
-    alert("Error al procesar: " + error.message);
-    console.error(error);
-
-}
-      document.getElementById('badgeProbabilidad').textContent = `${resultadoActual.probabilidad} Certeza`;
-      document.getElementById('resTituloAfeccion').textContent = resultadoActual.afeccion;
-      document.getElementById('resTipoPatogeno').textContent = `Agente / Origen probable: ${resultadoActual.patogeno}`;
-      
-      const lista = document.getElementById('resListaHallazgos');
-      lista.innerHTML = '';
-      resultadoActual.hallazgos.forEach(h => {
-        const li = document.createElement('li');
-        li.textContent = h;
-        lista.appendChild(li);
-      });
-
-      document.getElementById('resRecomendaciones').textContent = resultadoActual.recomendaciones;
-
-      document.getElementById('cargandoIA').classList.add('hidden');
-      document.getElementById('seccionResultado').classList.remove('hidden');
-      document.getElementById('seccionResultado').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function generarReportePDF() {
-      if (!resultadoActual) return;
-
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      const imgLogo = document.getElementById('imgLogoApp');
-      
-      if (imgLogo && imgLogo.complete && imgLogo.naturalWidth !== 0) {
-        try {
-    const respuesta = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            contents: [{
-                parts: [
-                    { text: promptClinico },
-                    { 
-                        inline_data: { 
-                            mime_type: "image/jpeg", 
-                            data: imagenBase64Limpia.includes(',') ? imagenBase64Limpia.split(',')[1] : imagenBase64Limpia 
-                        } 
-                    }
-                ]
-            }],
-            generationConfig: { response_mime_type: "application/json" }
-        })
-    });
-
-    if (!respuesta.ok) {
-        throw new Error("Error en la conexión con la IA");
-    }
-
-    const data = await respuesta.json();
-    if (data.candidates && data.candidates[0].content.parts[0].text) {
-        const textoRespuesta = data.candidates[0].content.parts[0].text;
-        resultadoActual = JSON.parse(textoRespuesta);
-    } else {
-        throw new Error("Respuesta no válida del modelo");
-    }
-} catch (error) {
-    alert("Error al procesar: " + error.message);
-    console.error(error);
-    document.getElementById('cargandoIA').classList.add('hidden');
-    return;
-}
-      }
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.setTextColor(13, 148, 136);
-      doc.text("PodoCheck Pro - Informe Podológico IA", 38, 20);
-
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(100, 116, 139);
-      doc.text(`Fecha del Análisis: ${new Date().toLocaleDateString('es-PE')}`, 38, 26);
-      doc.text(`Identificador: PDC-${Math.floor(100000 + Math.random() * 900000)}`, 38, 31);
-
-      doc.setDrawColor(203, 213, 225);
-      doc.line(15, 36, 195, 36);
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(15, 23, 42);
-      doc.text("1. RESULTADO DE LA EVALUACIÓN PODOLÓGICA", 15, 45);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text(`• Condición Detectada: ${resultadoActual.afeccion}`, 20, 53);
-      doc.text(`• Nivel de Certeza Evaluado: ${resultadoActual.probabilidad}`, 20, 60);
-      doc.text(`• Causa / Agente Probable: ${resultadoActual.patogeno}`, 20, 67);
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text("2. HALLAZGOS VISUALES CLÍNICOS", 15, 78);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      let y = 86;
-      resultadoActual.hallazgos.forEach(h => {
-        const lineas = doc.splitTextToSize(`• ${h}`, 170);
-        doc.text(lineas, 20, y);
-        y += (lineas.length * 6);
-      });
-
-      y += 4;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text("3. RECOMENDACIONES Y CUIDADOS PODOLÓGICOS", 15, y);
-
-      y += 8;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      const recs = doc.splitTextToSize(resultadoActual.recomendaciones, 175);
-      doc.text(recs, 15, y);
-
-      doc.setFontSize(8);
-      doc.setTextColor(148, 163, 184);
-      doc.text("Documento orientativo generado mediante inteligencia artificial podológica PodoCheck Pro. Consulte a su podólogo titulado.", 15, 280);
-
-      doc.save(`Informe_PodoCheck_${Date.now()}.pdf`);
-    }
-  </script>
+    </script>
 </body>
 </html>
