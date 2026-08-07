@@ -14,7 +14,6 @@
             <p class="text-xs text-slate-400">Asistencia Clínica e Inteligencia Artificial Podológica</p>
         </header>
 
-        <!-- Sección de captura / subida de foto -->
         <div class="flex flex-col gap-2">
             <label class="text-sm font-medium text-slate-300">Captura de la Zona Afectada (Piel o Uñas)</label>
             <input type="file" id="inputFoto" accept="image/*" capture="environment" class="hidden" onchange="manejarArchivo(this)">
@@ -24,24 +23,20 @@
             </button>
         </div>
 
-        <!-- Vista previa de la imagen -->
         <div id="contenedorVistaPrevia" class="hidden flex flex-col items-center gap-2">
             <img id="imgVistaPrevia" class="w-full h-48 object-cover rounded-xl border border-slate-700" alt="Vista previa">
             <div id="estadoImagen" class="text-xs text-emerald-400 font-medium">✓ Imagen lista y optimizada. Presiona 'Analizar con IA'.</div>
         </div>
 
-        <!-- Botón de análisis -->
         <button id="btnAnalizar" onclick="analizarConIA()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2">
             🔬 Analizar con IA
         </button>
 
-        <!-- Indicador de carga -->
         <div id="cargandoIA" class="hidden text-center py-4">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
             <p class="text-xs text-slate-400 mt-2">Analizando imagen clínica...</p>
         </div>
 
-        <!-- Resultados -->
         <div id="resultados" class="hidden flex flex-col gap-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
             <div class="flex justify-between items-center">
                 <span class="text-xs text-slate-400">Probabilidad:</span>
@@ -82,7 +77,6 @@
                         let width = img.width;
                         let height = img.height;
                         
-                        // Redimensionar para evitar errores de memoria o reinicios en móviles
                         const MAX_WIDTH = 800;
                         const MAX_HEIGHT = 800;
                         if (width > height) {
@@ -102,11 +96,9 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
                         
-                        // Obtener Base64 comprimido y limpio
                         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                         imagenBase64Limpia = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
                         
-                        // Mostrar vista previa sin recargar la página
                         document.getElementById('imgVistaPrevia').src = dataUrl;
                         document.getElementById('contenedorVistaPrevia').classList.remove('hidden');
                         document.getElementById('btnAnalizar').classList.remove('hidden');
@@ -129,9 +121,15 @@
             const promptClinico = "Analiza esta imagen desde una perspectiva estrictamente podológica. Devuelve un JSON válido con esta estructura exacta: {\"afeccion\": \"Nombre clínico exacto\", \"patogeno\": \"Causa u origen\", \"probabilidad\": \"Porcentaje entre 85% y 98%\", \"hallazgos\": [\"Característica 1\", \"Característica 2\"], \"recomendaciones\": \"Recomendaciones de higiene y podología\"}";
 
             try {
-                const respuesta = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+                // Usamos la API oficial con modo de compatibilidad de transporte limpio
+                const urlAPI = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+                
+                const respuesta = await fetch(urlAPI, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
                     body: JSON.stringify({
                         contents: [{
                             parts: [
@@ -144,7 +142,9 @@
                 });
 
                 if (!respuesta.ok) {
-                    throw new Error("Error en la conexión con la IA");
+                    const errorBody = await respuesta.text();
+                    console.error("Detalle técnico del error:", errorBody);
+                    throw new Error(`Error HTTP: ${respuesta.status}`);
                 }
 
                 const data = await respuesta.json();
@@ -167,10 +167,10 @@
                     document.getElementById('resRecomendaciones').textContent = resultadoActual.recomendaciones;
                     document.getElementById('resultados').classList.remove('hidden');
                 } else {
-                    throw new Error("Respuesta no válida del modelo");
+                    throw new Error("Estructura de respuesta inválida de la IA");
                 }
             } catch (error) {
-                alert("Error al procesar: " + error.message);
+                alert("Error de conexión: Verifica que tu clave de API tenga permisos activos para Generative Language y que no existan bloqueos de red móviles. (" + error.message + ")");
                 console.error(error);
             } finally {
                 document.getElementById('cargandoIA').classList.add('hidden');
