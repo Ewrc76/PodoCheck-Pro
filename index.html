@@ -274,16 +274,42 @@ Devuelve ÚNICAMENTE un objeto JSON estricto:
       
       if (imgLogo && imgLogo.complete && imgLogo.naturalWidth !== 0) {
         try {
-          const canvas = document.createElement('canvas');
-          canvas.width = imgLogo.naturalWidth || 100;
-          canvas.height = imgLogo.naturalHeight || 100;
-          const ctx2d = canvas.getContext('2d');
-          ctx2d.drawImage(imgLogo, 0, 0);
-          const logoBase64 = canvas.toDataURL('image/png');
-          doc.addImage(logoBase64, 'PNG', 15, 12, 18, 18);
-        } catch (e) {
-          console.log("No se pudo incrustar el logo en el PDF:", e);
-        }
+    const respuesta = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            contents: [{
+                parts: [
+                    { text: promptClinico },
+                    { 
+                        inline_data: { 
+                            mime_type: "image/jpeg", 
+                            data: imagenBase64Limpia.includes(',') ? imagenBase64Limpia.split(',')[1] : imagenBase64Limpia 
+                        } 
+                    }
+                ]
+            }],
+            generationConfig: { response_mime_type: "application/json" }
+        })
+    });
+
+    if (!respuesta.ok) {
+        throw new Error("Error en la conexión con la IA");
+    }
+
+    const data = await respuesta.json();
+    if (data.candidates && data.candidates[0].content.parts[0].text) {
+        const textoRespuesta = data.candidates[0].content.parts[0].text;
+        resultadoActual = JSON.parse(textoRespuesta);
+    } else {
+        throw new Error("Respuesta no válida del modelo");
+    }
+} catch (error) {
+    alert("Error al procesar: " + error.message);
+    console.error(error);
+    document.getElementById('cargandoIA').classList.add('hidden');
+    return;
+}
       }
 
       doc.setFont("helvetica", "bold");
