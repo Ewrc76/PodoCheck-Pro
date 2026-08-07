@@ -214,8 +214,8 @@ Devuelve ÚNICAMENTE un objeto JSON estricto:
   "recomendaciones": "Recomendaciones podológicas específicas e higiene."
 }`;
 
-     try {
-    const respuesta = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyA_m7-n5W7rYh8L8-zU6rP6F9W4m2X0J1Q", {
+    const GEMINI_KEY = "AIzaSyA_m7-n5W7rYh8L8-zU6rP6F9W4m2X0J1Q";
+   const respuesta = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
