@@ -111,8 +111,15 @@
   </main>
 
   <script>
+    // Registro y actualización del Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => console.log('SW no registrado'));
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        reg.update();
+      }).catch(() => console.log('SW no registrado'));
+
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
     }
 
     let imagenBase64Limpia = "";
@@ -172,7 +179,7 @@ IMPORTANTE: La podología abarca tanto las UÑAS como la PIEL de los pies/manos.
 1. Si es un problema en la PIEL (ejemplo: Tinea Pedis / Pie de Atleta descamativo o interdigital, Maceración, Verruga plantar / Ojo de gallo, Hiperqueratosis / Durezas, Dermatitis de contacto, Eccema, Piel Sana, etc.).
 2. Si es un problema en las UÑAS (ejemplo: Onicomicosis distal/lateral/superficial por dermatofitos o levaduras, Hematoma subungueal por traumatismo, Onicocriptosis / Uña encarnada, Psoriasis ungueal, Traumatismo ungueal, Onicogrifosis, Uña sana, etc.).
 
-Devuelve ÚNICAMENTE un objeto JSON estricto sin comillas triples ni texto alrededor:
+Devuelve ÚNICAMENTE un objeto JSON estricto:
 {
   "afeccion": "Nombre clínico exacto y detallado del problema detectado",
   "patogeno": "Microorganismo, causa biomecánica o factor de origen (Ejemplo: Trichophyton rubrum, Fricción/Calzado, Cándida albicans, Traumatismo, etc.)",
@@ -185,7 +192,6 @@ Devuelve ÚNICAMENTE un objeto JSON estricto sin comillas triples ni texto alred
   "recomendaciones": "Recomendaciones podológicas específicas para esta condición particular (higiene, secado, tipo de calzado o tratamiento recomendado para consultar con el especialista)."
 }`;
 
-      // Clave pública activa con permisos de visión para Gemini
       const GEMINI_KEY = ["AIzaSyD", "2zR3gN", "X3qf2K", "gH1uM", "8Lp4W", "9vQz1"].join('');
 
       try {
@@ -198,15 +204,17 @@ Devuelve ÚNICAMENTE un objeto JSON estricto sin comillas triples ni texto alred
                 { text: promptClinico },
                 { inline_data: { mime_type: "image/jpeg", data: imagenBase64Limpia } }
               ]
-            }]
+            }],
+            generationConfig: {
+              response_mime_type: "application/json"
+            }
           })
         });
 
         const data = await respuesta.json();
         
         if (data.candidates && data.candidates[0].content.parts[0].text) {
-          let textoRespuesta = data.candidates[0].content.parts[0].text;
-          textoRespuesta = textoRespuesta.replace(/```json/g, "").replace(/```/g, "").trim();
+          const textoRespuesta = data.candidates[0].content.parts[0].text;
           resultadoActual = JSON.parse(textoRespuesta);
         } else {
           throw new Error("Respuesta no estructurada");
@@ -243,26 +251,25 @@ Devuelve ÚNICAMENTE un objeto JSON estricto sin comillas triples ni texto alred
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      // Cargar el Logo de PodoCheck Pro en el PDF
       const imgLogo = document.getElementById('imgLogoApp');
       
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = imgLogo.naturalWidth || 100;
-        canvas.height = imgLogo.naturalHeight || 100;
-        const ctx = canvas.getContext('canvas');
-        const ctx2d = canvas.getContext('2d');
-        ctx2d.drawImage(imgLogo, 0, 0);
-        const logoBase64 = canvas.toDataURL('image/png');
-        doc.addImage(logoBase64, 'PNG', 15, 12, 18, 18);
-      } catch (e) {
-        console.log("No se pudo incrustar el logo en el PDF:", e);
+      if (imgLogo && imgLogo.complete && imgLogo.naturalWidth !== 0) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = imgLogo.naturalWidth || 100;
+          canvas.height = imgLogo.naturalHeight || 100;
+          const ctx2d = canvas.getContext('2d');
+          ctx2d.drawImage(imgLogo, 0, 0);
+          const logoBase64 = canvas.toDataURL('image/png');
+          doc.addImage(logoBase64, 'PNG', 15, 12, 18, 18);
+        } catch (e) {
+          console.log("No se pudo incrustar el logo en el PDF:", e);
+        }
       }
 
-      // Encabezado del PDF
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
-      doc.setTextColor(13, 148, 136); // Color Teal
+      doc.setTextColor(13, 148, 136);
       doc.text("PodoCheck Pro - Informe Podológico IA", 38, 20);
 
       doc.setFontSize(9);
@@ -274,7 +281,6 @@ Devuelve ÚNICAMENTE un objeto JSON estricto sin comillas triples ni texto alred
       doc.setDrawColor(203, 213, 225);
       doc.line(15, 36, 195, 36);
 
-      // Sección 1: Resultado
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.setTextColor(15, 23, 42);
@@ -286,7 +292,6 @@ Devuelve ÚNICAMENTE un objeto JSON estricto sin comillas triples ni texto alred
       doc.text(`• Nivel de Certeza Evaluado: ${resultadoActual.probabilidad}`, 20, 60);
       doc.text(`• Causa / Agente Probable: ${resultadoActual.patogeno}`, 20, 67);
 
-      // Sección 2: Hallazgos
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.text("2. HALLAZGOS VISUALES CLÍNICOS", 15, 78);
@@ -300,7 +305,6 @@ Devuelve ÚNICAMENTE un objeto JSON estricto sin comillas triples ni texto alred
         y += (lineas.length * 6);
       });
 
-      // Sección 3: Recomendaciones
       y += 4;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
@@ -312,7 +316,6 @@ Devuelve ÚNICAMENTE un objeto JSON estricto sin comillas triples ni texto alred
       const recs = doc.splitTextToSize(resultadoActual.recomendaciones, 175);
       doc.text(recs, 15, y);
 
-      // Pie de página
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
       doc.text("Documento orientativo generado mediante inteligencia artificial podológica PodoCheck Pro. Consulte a su podólogo titulado.", 15, 280);
