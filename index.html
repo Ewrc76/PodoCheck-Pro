@@ -17,8 +17,8 @@
   <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50 shadow-lg">
     <div class="max-w-3xl mx-auto flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-500 flex items-center justify-center text-teal-400 font-bold text-xl">
-          🩺
+        <div class="w-12 h-12 bg-white rounded-xl p-1 flex items-center justify-center border border-teal-500 shadow-md">
+          <img src="Podo.png" alt="Logo Podología" class="w-full h-full object-contain">
         </div>
         <div>
           <h1 class="font-bold text-lg text-teal-400 leading-tight">PodoCheck Pro</h1>
@@ -98,7 +98,7 @@
       </div>
 
       <div class="p-3 bg-amber-950/60 border border-amber-800/80 rounded-xl text-[11px] text-amber-200">
-        ⚠️ <b>Aviso Medico Orientativo:</b> Este análisis es generado mediante visión artificial con fines exclusivamente informativos e indicativos. No constituye un diagnóstico de laboratorio definitivo (como cultivo micológico). Consulte a un podólogo o dermatólogo titulado.
+        ⚠️ <b>Aviso Médico Orientativo:</b> Este análisis es generado mediante visión artificial con fines exclusivamente informativos e indicativos. No constituye un diagnóstico de laboratorio definitivo (como cultivo micológico). Consulte a un podólogo o dermatólogo titulado.
       </div>
 
       <button onclick="generarReportePDF()" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 rounded-xl text-sm shadow flex items-center justify-center gap-2">
@@ -109,7 +109,6 @@
   </main>
 
   <script>
-    // Registro de Service Worker para PWA
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(() => console.log('SW no registrado'));
     }
@@ -130,7 +129,6 @@
           document.getElementById('vistaPrevia').classList.remove('hidden');
           document.getElementById('placeholderCamara').classList.add('hidden');
 
-          // Evaluar Calidad de la Foto (Resolución, Brillo)
           validarCalidadFoto(img);
         };
         img.src = evt.target.result;
@@ -144,7 +142,6 @@
       cajaCalidad.classList.remove('hidden', 'bg-rose-950', 'text-rose-300', 'border-rose-800', 'bg-emerald-950', 'text-emerald-300', 'border-emerald-800');
       cajaCalidad.classList.add('border');
 
-      // Verificación de resolución mínima
       if (img.width < 400 || img.height < 400) {
         cajaCalidad.classList.add('bg-rose-950', 'text-rose-300', 'border-rose-800');
         cajaCalidad.innerHTML = "❌ <b>Foto muy pequeña o desenfocada.</b> Por favor, acerca más la cámara a la uña y vuelve a tomarla con mayor claridad.";
@@ -153,7 +150,6 @@
         return;
       }
 
-      // Foto Válida
       cajaCalidad.classList.add('bg-emerald-950', 'text-emerald-300', 'border-emerald-800');
       cajaCalidad.innerHTML = "✅ <b>Foto nítida y apta para evaluación.</b> Haz clic en 'Analizar con IA' para obtener el diagnóstico.";
       
@@ -168,8 +164,6 @@
       document.getElementById('seccionResultado').classList.add('hidden');
 
       setTimeout(() => {
-        // Simulación avanzada de motor clínico de Visión Artificial podológica
-        // (En la versión v2.0 se conecta directo con la API de Gemini Vision)
         resultadoActual = {
           afeccion: "Onicomicosis Subungueal Distal / Lateral",
           patogeno: "Hongo Dermatofito (Trichophyton rubrum)",
@@ -183,7 +177,6 @@
           recomendaciones: "Se aconseja acudir a consulta podológica para realizar profilaxis y debridado mecánico. Evitar el uso de calzado ajustado o con humedad acumulada. Mantener la zona seca y desinfectar el calzado periódicamente."
         };
 
-        // Renderizar en UI
         document.getElementById('badgeProbabilidad').textContent = `${resultadoActual.probabilidad} Probabilidad`;
         document.getElementById('resTituloAfeccion').textContent = resultadoActual.afeccion;
         document.getElementById('resTipoPatogeno').textContent = `Agente probable: ${resultadoActual.patogeno}`;
@@ -201,7 +194,6 @@
         document.getElementById('cargandoIA').classList.add('hidden');
         document.getElementById('seccionResultado').classList.remove('hidden');
 
-        // Desplazar suavemente a los resultados
         document.getElementById('seccionResultado').scrollIntoView({ behavior: 'smooth' });
       }, 2200);
     }
