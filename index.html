@@ -28,7 +28,7 @@
         </div>
       </div>
       <span class="text-[10px] bg-teal-950 text-teal-300 border border-teal-800 px-2.5 py-1 rounded-full font-semibold">
-        Versión Clínica IA v2.0
+        Versión Clínica IA v2.1 (Optimizada)
       </span>
     </div>
   </header>
@@ -111,7 +111,6 @@
   </main>
 
   <script>
-    // Registro y actualización del Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').then(reg => {
         reg.update();
@@ -137,12 +136,39 @@
           document.getElementById('vistaPrevia').classList.remove('hidden');
           document.getElementById('placeholderCamara').classList.add('hidden');
 
-          imagenBase64Limpia = evt.target.result.split(',')[1];
+          // Compresión de imagen para alta velocidad y bajo consumo de API
+          imagenBase64Limpia = comprimirImagen(img, 800, 0.7);
           validarCalidadFoto(img);
         };
         img.src = evt.target.result;
       };
       reader.readAsDataURL(file);
+    }
+
+    function comprimirImagen(img, maxDim, calidad) {
+      const canvas = document.createElement('canvas');
+      let w = img.width;
+      let h = img.height;
+
+      if (w > h) {
+        if (w > maxDim) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        }
+      } else {
+        if (h > maxDim) {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', calidad);
+      return dataUrl.split(',')[1];
     }
 
     function validarCalidadFoto(img) {
@@ -151,7 +177,7 @@
       cajaCalidad.classList.remove('hidden', 'bg-rose-950', 'text-rose-300', 'border-rose-800', 'bg-emerald-950', 'text-emerald-300', 'border-emerald-800');
       cajaCalidad.classList.add('border');
 
-      if (img.width < 250 || img.height < 250) {
+      if (img.width < 200 || img.height < 200) {
         cajaCalidad.classList.add('bg-rose-950', 'text-rose-300', 'border-rose-800');
         cajaCalidad.innerHTML = "❌ <b>Foto de baja resolución.</b> Toma una foto con mejor enfoque y buena iluminación.";
         btnAnalizar.disabled = true;
@@ -160,7 +186,7 @@
       }
 
       cajaCalidad.classList.add('bg-emerald-950', 'text-emerald-300', 'border-emerald-800');
-      cajaCalidad.innerHTML = "✅ <b>Imagen lista.</b> Presiona 'Analizar con IA' para obtener la evaluación en tiempo real.";
+      cajaCalidad.innerHTML = "✅ <b>Imagen lista y optimizada.</b> Presiona 'Analizar con IA' para obtener la evaluación.";
       
       btnAnalizar.disabled = false;
       btnAnalizar.className = "flex-1 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-xl text-sm shadow cursor-pointer transition";
@@ -172,24 +198,21 @@
       document.getElementById('cargandoIA').classList.remove('hidden');
       document.getElementById('seccionResultado').classList.add('hidden');
 
-      const promptClinico = `Actúa como un médico especialista en Podología y Dermatología clínica. Analiza con máxima precisión la imagen adjunta.
+      const promptClinico = `Actúa como un médico especialista en Podología y Dermatología clínica. Analiza la imagen adjunta.
 
-IMPORTANTE: La podología abarca tanto las UÑAS como la PIEL de los pies/manos. Determina con exactitud qué se observa en la fotografía:
-
-1. Si es un problema en la PIEL (ejemplo: Tinea Pedis / Pie de Atleta descamativo o interdigital, Maceración, Verruga plantar / Ojo de gallo, Hiperqueratosis / Durezas, Dermatitis de contacto, Eccema, Piel Sana, etc.).
-2. Si es un problema en las UÑAS (ejemplo: Onicomicosis distal/lateral/superficial por dermatofitos o levaduras, Hematoma subungueal por traumatismo, Onicocriptosis / Uña encarnada, Psoriasis ungueal, Traumatismo ungueal, Onicogrifosis, Uña sana, etc.).
+IMPORTANTE: Determina si es un problema en PIEL o UÑAS (ejemplo: Onicomicosis, Pie de atleta, Tinea Pedis, Verruga plantar, Psoriasis ungueal, Piel Sana, Uña Sana, etc.).
 
 Devuelve ÚNICAMENTE un objeto JSON estricto:
 {
-  "afeccion": "Nombre clínico exacto y detallado del problema detectado",
-  "patogeno": "Microorganismo, causa biomecánica o factor de origen (Ejemplo: Trichophyton rubrum, Fricción/Calzado, Cándida albicans, Traumatismo, etc.)",
+  "afeccion": "Nombre clínico exacto de la condición",
+  "patogeno": "Causa u origen (Ej: Trichophyton rubrum, Fricción, Cándida, etc.)",
   "probabilidad": "Porcentaje de certeza entre 85% y 98%",
   "hallazgos": [
-    "Descripción de la primera característica visual observada (color, textura, patrón)",
-    "Descripción de la segunda característica visual observada",
-    "Descripción de la tercera característica visual observada"
+    "Primera característica visual observada",
+    "Segunda característica visual observada",
+    "Tercera característica visual observada"
   ],
-  "recomendaciones": "Recomendaciones podológicas específicas para esta condición particular (higiene, secado, tipo de calzado o tratamiento recomendado para consultar con el especialista)."
+  "recomendaciones": "Recomendaciones podológicas específicas e higiene."
 }`;
 
       const GEMINI_KEY = ["AIzaSyD", "2zR3gN", "X3qf2K", "gH1uM", "8Lp4W", "9vQz1"].join('');
@@ -212,16 +235,20 @@ Devuelve ÚNICAMENTE un objeto JSON estricto:
         });
 
         const data = await respuesta.json();
+
+        if (data.error) {
+          throw new Error(data.error.message || "Error en la API de Google");
+        }
         
         if (data.candidates && data.candidates[0].content.parts[0].text) {
           const textoRespuesta = data.candidates[0].content.parts[0].text;
           resultadoActual = JSON.parse(textoRespuesta);
         } else {
-          throw new Error("Respuesta no estructurada");
+          throw new Error("Respuesta no válida del modelo");
         }
       } catch (err) {
         console.error("Error en API:", err);
-        alert("Ocurrió un error al procesar con la IA. Asegúrate de tener conexión a Internet e inténtalo nuevamente.");
+        alert(`Ocurrió un detalle al procesar: ${err.message}. Si el error persiste, la clave API pública ha llegado a su límite de cuota.`);
         document.getElementById('cargandoIA').classList.add('hidden');
         return;
       }
