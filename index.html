@@ -214,22 +214,25 @@ Devuelve ÚNICAMENTE un objeto JSON estricto:
   "recomendaciones": "Recomendaciones podológicas específicas e higiene."
 }`;
 
-      const GEMINI_KEY = "AQ.Ab8RN6Kp7AoF7Dzc6BJGZs_acDkqnyyV8AMLEEKtZPcZptVMOg";
+     const GEMINI_KEY = "AQ.Ab8RN6Kp7AoF7Dzc6BJGZs_acDkqnyyV8AMLEEKtZPcZptVMOg";
 
-      try {
-        const respuesta = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: promptClinico },
-                { inline_data: { mime_type: "image/jpeg", data: imagenBase64Limpia } }
-              ]
-            }],
-            generationConfig: {
-              response_mime_type: "application/json"
-            }
+try {
+  const respuesta = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(GEMINI_KEY)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: promptClinico },
+          { inline_data: { mime_type: "image/jpeg", data: imagenBase64Limpia } }
+        ]
+      }],
+      generationConfig: {
+        response_mime_type: "application/json"
+      }
+    })
+  });
+         
           })
         });
 
