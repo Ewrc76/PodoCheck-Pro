@@ -1,4 +1,5 @@
 {
+  "id": "com.ewrc76.podocheckpro.app",
   "name": "PodoCheck Pro",
   "short_name": "PodoCheck",
   "start_url": "./index.html",
